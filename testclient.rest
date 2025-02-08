@@ -1,0 +1,32 @@
+### Get all tools
+GET http://localhost:8080/handytools
+
+### Get one tool
+GET http://localhost:8080/handytools/1
+
+### Create new tool
+POST http://localhost:8080/handytools
+Content-Type: application/json
+
+{
+    "toolDetail": "Saw",
+    "ownerName": "Mike",
+    "locationName": "Workshop",
+    "borrowed": false,
+    "borrowerName": ""
+}
+
+### Update existing tool
+PUT http://localhost:8080/handytools/1
+Content-Type: application/json
+
+{
+    "toolDetail": "Power Hammer",
+    "ownerName": "John",
+    "locationName": "Garage",
+    "borrowed": true,
+    "borrowerName": "Jane"
+}
+
+### Delete tool
+DELETE http://localhost:8080/handytools/1
