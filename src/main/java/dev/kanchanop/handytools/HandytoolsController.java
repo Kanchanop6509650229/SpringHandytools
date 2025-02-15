@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  *
@@ -65,5 +66,47 @@ public class HandytoolsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void deleteStorage(@PathVariable Long id) {
         repository.deleteById(id);
+    }
+
+    @PutMapping("/handytools/{id}/borrow")
+    Storage borrowTool(@PathVariable Long id, @RequestBody String borrowerName) {
+        return repository.findById(id)
+            .map(storage -> {
+                try {
+                    storage.borrowTool(borrowerName);
+                    return repository.save(storage);
+                } catch (IllegalStateException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+                }
+            })
+            .orElseThrow(() -> new StorageNotFoundException(id));
+    }
+
+    @PutMapping("/handytools/{id}/return")
+    Storage returnTool(@PathVariable Long id) {
+        return repository.findById(id)
+            .map(storage -> {
+                try {
+                    storage.returnTool();
+                    return repository.save(storage);
+                } catch (IllegalStateException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+                }
+            })
+            .orElseThrow(() -> new StorageNotFoundException(id));
+    }
+
+    @GetMapping("/handytools/available")
+    List<Storage> findAvailableTools() {
+        return repository.findAll().stream()
+            .filter(Storage::canBeBorrowed)
+            .toList();
+    }
+
+    @GetMapping("/handytools/borrowed")
+    List<Storage> findBorrowedTools() {
+        return repository.findAll().stream()
+            .filter(s -> !s.canBeBorrowed())
+            .toList();
     }
 }

@@ -104,4 +104,92 @@ class HandytoolsControllerTests {
         ResponseEntity<Storage> response = restTemplate.getForEntity("/handytools/999", Storage.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
+
+    @Test
+    void shouldBorrowTool() {
+        // Create a new tool
+        Storage newTool = new Storage("Test Tool", "Test Owner", "Test Location", false, "");
+        ResponseEntity<Storage> createResponse = restTemplate.postForEntity("/handytools", newTool, Storage.class);
+        Storage createdTool = createResponse.getBody();
+        assertThat(createdTool).isNotNull();
+        Long toolId = createdTool.getId();
+
+        // Borrow the tool
+        String borrower = "Test Borrower";
+        ResponseEntity<Storage> borrowResponse = restTemplate.exchange(
+            "/handytools/" + toolId + "/borrow",
+            HttpMethod.PUT,
+            new HttpEntity<>(borrower),
+            Storage.class
+        );
+
+        assertThat(borrowResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Storage borrowedTool = borrowResponse.getBody();
+        assertThat(borrowedTool).isNotNull();
+        assertThat(borrowedTool.isBorrowed()).isTrue();
+        assertThat(borrowedTool.getBorrowerName()).isEqualTo(borrower);
+    }
+
+    @Test
+    void shouldReturnTool() {
+        // Create a borrowed tool
+        Storage newTool = new Storage("Test Tool", "Test Owner", "Test Location", true, "Current Borrower");
+        ResponseEntity<Storage> createResponse = restTemplate.postForEntity("/handytools", newTool, Storage.class);
+        Storage createdTool = createResponse.getBody();
+        assertThat(createdTool).isNotNull();
+        Long toolId = createdTool.getId();
+
+        // Return the tool
+        ResponseEntity<Storage> returnResponse = restTemplate.exchange(
+            "/handytools/" + toolId + "/return",
+            HttpMethod.PUT,
+            HttpEntity.EMPTY,
+            Storage.class
+        );
+
+        assertThat(returnResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Storage returnedTool = returnResponse.getBody();
+        assertThat(returnedTool).isNotNull();
+        assertThat(returnedTool.isBorrowed()).isFalse();
+        assertThat(returnedTool.getBorrowerName()).isEmpty();
+    }
+
+    @Test
+    void shouldNotBorrowAlreadyBorrowedTool() {
+        // Create an already borrowed tool
+        Storage newTool = new Storage("Test Tool", "Test Owner", "Test Location", true, "Current Borrower");
+        ResponseEntity<Storage> createResponse = restTemplate.postForEntity("/handytools", newTool, Storage.class);
+        Storage createdTool = createResponse.getBody();
+        assertThat(createdTool).isNotNull();
+        Long toolId = createdTool.getId();
+
+        // Try to borrow it again
+        String newBorrower = "New Borrower";
+        ResponseEntity<Storage> borrowResponse = restTemplate.exchange(
+            "/handytools/" + toolId + "/borrow",
+            HttpMethod.PUT,
+            new HttpEntity<>(newBorrower),
+            Storage.class
+        );
+
+        assertThat(borrowResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void shouldFindAvailableTools() {
+        ResponseEntity<Storage[]> response = restTemplate.getForEntity("/handytools/available", Storage[].class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Storage[] tools = response.getBody();
+        assertThat(tools).isNotNull();
+        assertThat(tools).allMatch(tool -> !tool.isBorrowed());
+    }
+
+    @Test
+    void shouldFindBorrowedTools() {
+        ResponseEntity<Storage[]> response = restTemplate.getForEntity("/handytools/borrowed", Storage[].class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Storage[] tools = response.getBody();
+        assertThat(tools).isNotNull();
+        assertThat(tools).allMatch(Storage::isBorrowed);
+    }
 }

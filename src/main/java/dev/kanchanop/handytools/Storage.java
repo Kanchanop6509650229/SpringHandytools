@@ -77,4 +77,28 @@ public class Storage {
     public void setBorrowerName(String borrowerName) {
         this.borrowerName = borrowerName;
     }
+
+    public boolean canBeBorrowed() {
+        return !this.borrowed;
+    }
+    
+    public boolean canBeReturned() {
+        return this.borrowed;
+    }
+    
+    public void borrowTool(String borrowerName) {
+        if (!canBeBorrowed()) {
+            throw new IllegalStateException("Tool is already borrowed by " + this.borrowerName);
+        }
+        this.borrowed = true;
+        this.borrowerName = borrowerName;
+    }
+    
+    public void returnTool() {
+        if (!canBeReturned()) {
+            throw new IllegalStateException("Tool is not currently borrowed");
+        }
+        this.borrowed = false;
+        this.borrowerName = "";
+    }
 }
