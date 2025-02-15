@@ -7,6 +7,8 @@ package dev.kanchanop.handytools;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 public class HandytoolsController {
     private final StorageRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(HandytoolsController.class);
 
     public HandytoolsController(StorageRepository repository) {
         this.repository = repository;
@@ -65,7 +68,13 @@ public class HandytoolsController {
     @DeleteMapping("/handytools/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void deleteStorage(@PathVariable Long id) {
-        repository.deleteById(id);
+        try {
+            repository.deleteById(id);
+            log.info("Tool {} deleted", id);
+        } catch (Exception e) {
+            log.warn("Failed to delete tool {}: {}", id, e.getMessage());
+            throw e;
+        }
     }
 
     @PutMapping("/handytools/{id}/borrow")
@@ -74,12 +83,18 @@ public class HandytoolsController {
             .map(storage -> {
                 try {
                     storage.borrowTool(borrowerName);
-                    return repository.save(storage);
-                } catch (IllegalStateException e) {
+                    Storage saved = repository.save(storage);
+                    log.info("Tool {} borrowed by {}", saved.getToolDetail(), saved.getBorrowerName());
+                    return saved;
+                } catch (IllegalStateException | IllegalArgumentException e) {
+                    log.warn("Failed to borrow tool {}: {}", id, e.getMessage());
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
                 }
             })
-            .orElseThrow(() -> new StorageNotFoundException(id));
+            .orElseThrow(() -> {
+                log.warn("Tool {} not found for borrowing", id);
+                return new StorageNotFoundException(id);
+            });
     }
 
     @PutMapping("/handytools/{id}/return")
@@ -87,13 +102,20 @@ public class HandytoolsController {
         return repository.findById(id)
             .map(storage -> {
                 try {
+                    String previousBorrower = storage.getBorrowerName();
                     storage.returnTool();
-                    return repository.save(storage);
+                    Storage saved = repository.save(storage);
+                    log.info("Tool {} returned by {}", saved.getToolDetail(), previousBorrower);
+                    return saved;
                 } catch (IllegalStateException e) {
+                    log.warn("Failed to return tool {}: {}", id, e.getMessage());
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
                 }
             })
-            .orElseThrow(() -> new StorageNotFoundException(id));
+            .orElseThrow(() -> {
+                log.warn("Tool {} not found for returning", id);
+                return new StorageNotFoundException(id);
+            });
     }
 
     @GetMapping("/handytools/available")

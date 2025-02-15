@@ -4,6 +4,12 @@ GET http://localhost:8080/handytools
 ### Get one tool
 GET http://localhost:8080/handytools/1
 
+### Get available tools
+GET http://localhost:8080/handytools/available
+
+### Get borrowed tools
+GET http://localhost:8080/handytools/borrowed
+
 ### Create new tool
 POST http://localhost:8080/handytools
 Content-Type: application/json
@@ -28,5 +34,24 @@ Content-Type: application/json
     "borrowerName": "Jane"
 }
 
+### Borrow a tool
+PUT http://localhost:8080/handytools/1/borrow
+Content-Type: text/plain
+
+Alice
+
+### Return a tool
+PUT http://localhost:8080/handytools/1/return
+
 ### Delete tool
 DELETE http://localhost:8080/handytools/1
+
+### Try to borrow with empty name (should fail)
+PUT http://localhost:8080/handytools/1/borrow
+Content-Type: text/plain
+
+### Try to borrow already borrowed tool (should fail)
+PUT http://localhost:8080/handytools/2/borrow
+Content-Type: text/plain
+
+Bob

@@ -87,11 +87,14 @@ public class Storage {
     }
     
     public void borrowTool(String borrowerName) {
+        if (borrowerName == null || borrowerName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Borrower name must not be empty");
+        }
         if (!canBeBorrowed()) {
             throw new IllegalStateException("Tool is already borrowed by " + this.borrowerName);
         }
         this.borrowed = true;
-        this.borrowerName = borrowerName;
+        this.borrowerName = borrowerName.trim();
     }
     
     public void returnTool() {
