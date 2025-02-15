@@ -12,14 +12,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- *
- * @author dlwlrma
+ * คลาสสำหรับโหลดข้อมูลเริ่มต้นลงในฐานข้อมูล
+ * ใช้สำหรับสร้างข้อมูลตัวอย่างเมื่อเริ่มต้นแอปพลิเคชัน
  */
 @Configuration
 public class LoadDatabase {
     
     private static final Logger log = LoggerFactory.getLogger(LoadDatabase.class);
 
+    /**
+     * สร้างข้อมูลตัวอย่างในฐานข้อมูล
+     * เพิ่มอุปกรณ์ตัวอย่างจำนวน 3 รายการ
+     * @param storageRepository repository สำหรับจัดการข้อมูลอุปกรณ์
+     */
     @Bean
     public CommandLineRunner setupData(StorageRepository storageRepository) {
         return (args) -> {

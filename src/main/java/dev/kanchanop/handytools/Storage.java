@@ -13,19 +13,50 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 
+/**
+ * คลาสสำหรับเก็บข้อมูลอุปกรณ์
+ * เป็น Entity class ที่ใช้เก็บข้อมูลในฐานข้อมูล
+ */
 @Entity
 public class Storage {
-    private @Id
-    @GeneratedValue
-    Long id;
+    /**
+     * รหัสอุปกรณ์ (สร้างอัตโนมัติ)
+     */
+    private @Id @GeneratedValue Long id;
+
+    /**
+     * รายละเอียดของอุปกรณ์
+     */
     private String toolDetail;
+
+    /**
+     * ชื่อเจ้าของอุปกรณ์
+     */
     private String ownerName;
+
+    /**
+     * สถานที่เก็บอุปกรณ์
+     */
     private String locationName;
+
+    /**
+     * สถานะการยืม (true = ถูกยืมแล้ว, false = ยังไม่ถูกยืม)
+     */
     private boolean borrowed;
+
+    /**
+     * ชื่อผู้ยืมอุปกรณ์
+     */
     private String borrowerName;
 
+    /**
+     * คอนสตรักเตอร์เปล่าสำหรับ JPA
+     */
     Storage() {} // Default constructor for JPA
 
+    /**
+     * คอนสตรักเตอร์สำหรับสร้างอุปกรณ์ใหม่
+     */
     public Storage(String toolDetail, String ownerName, String locationName, boolean borrowed,
             String borrowerName) {
         this.toolDetail = toolDetail;
@@ -78,14 +109,28 @@ public class Storage {
         this.borrowerName = borrowerName;
     }
 
+    /**
+     * ตรวจสอบว่าอุปกรณ์สามารถยืมได้หรือไม่
+     * @return true ถ้าสามารถยืมได้, false ถ้าถูกยืมไปแล้ว
+     */
     public boolean canBeBorrowed() {
         return !this.borrowed;
     }
     
+    /**
+     * ตรวจสอบว่าอุปกรณ์สามารถคืนได้หรือไม่
+     * @return true ถ้าสามารถคืนได้, false ถ้ายังไม่ถูกยืม
+     */
     public boolean canBeReturned() {
         return this.borrowed;
     }
     
+    /**
+     * บันทึกการยืมอุปกรณ์
+     * @param borrowerName ชื่อผู้ยืม
+     * @throws IllegalArgumentException ถ้าไม่ระบุชื่อผู้ยืม
+     * @throws IllegalStateException ถ้าอุปกรณ์ถูกยืมไปแล้ว
+     */
     public void borrowTool(String borrowerName) {
         if (borrowerName == null || borrowerName.trim().isEmpty()) {
             throw new IllegalArgumentException("Borrower name must not be empty");
@@ -97,6 +142,10 @@ public class Storage {
         this.borrowerName = borrowerName.trim();
     }
     
+    /**
+     * บันทึกการคืนอุปกรณ์
+     * @throws IllegalStateException ถ้าอุปกรณ์ยังไม่ถูกยืม
+     */
     public void returnTool() {
         if (!canBeReturned()) {
             throw new IllegalStateException("Tool is not currently borrowed");

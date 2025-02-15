@@ -21,34 +21,54 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- *
- * @author dlwlrma
+ * คอนโทรลเลอร์สำหรับจัดการการยืม-คืนอุปกรณ์
+ * รับผิดชอบในการจัดการ API endpoints ทั้งหมดที่เกี่ยวข้องกับการจัดการอุปกรณ์
  */
 @RestController
 public class HandytoolsController {
     private final StorageRepository repository;
     private static final Logger log = LoggerFactory.getLogger(HandytoolsController.class);
 
+    /**
+     * คอนสตรักเตอร์สำหรับ HandytoolsController
+     * @param repository ที่เก็บข้อมูลสำหรับจัดการอุปกรณ์
+     */
     public HandytoolsController(StorageRepository repository) {
         this.repository = repository;
     }
 
+    /**
+     * ดึงข้อมูลอุปกรณ์ทั้งหมด
+     */
     @GetMapping("/handytools")
     List<Storage> findAll() {
         return repository.findAll();
     }
 
+    /**
+     * ค้นหาอุปกรณ์ตาม ID
+     * @param id รหัสอุปกรณ์
+     */
     @GetMapping("/handytools/{id}")
     Storage findOne(@PathVariable Long id) {
         return repository.findById(id)
             .orElseThrow(() -> new StorageNotFoundException(id));
     }
 
+    /**
+     * เพิ่มอุปกรณ์ใหม่
+     * @param newStorage ข้อมูลอุปกรณ์ที่จะเพิ่ม
+     */
     @PostMapping("/handytools")
     Storage newStorage(@RequestBody Storage newStorage) {
         return repository.save(newStorage);
     }
 
+    /**
+     * อัพเดทข้อมูลอุปกรณ์ที่มีอยู่
+     * @param newStorage ข้อมูลอุปกรณ์ใหม่
+     * @param id รหัสอุปกรณ์ที่ต้องการอัพเดท
+     */
     @PutMapping("/handytools/{id}")
     Storage replaceStorage(@RequestBody Storage newStorage, @PathVariable Long id) {
         return repository.findById(id)
@@ -65,6 +85,10 @@ public class HandytoolsController {
             });
     }
 
+    /**
+     * ลบอุปกรณ์ตาม ID
+     * @param id รหัสอุปกรณ์ที่ต้องการลบ
+     */
     @DeleteMapping("/handytools/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void deleteStorage(@PathVariable Long id) {
@@ -77,6 +101,11 @@ public class HandytoolsController {
         }
     }
 
+    /**
+     * บันทึกการยืมอุปกรณ์
+     * @param id รหัสอุปกรณ์
+     * @param borrowerName ชื่อผู้ยืม
+     */
     @PutMapping("/handytools/{id}/borrow")
     Storage borrowTool(@PathVariable Long id, @RequestBody String borrowerName) {
         return repository.findById(id)
@@ -97,6 +126,10 @@ public class HandytoolsController {
             });
     }
 
+    /**
+     * บันทึกการคืนอุปกรณ์
+     * @param id รหัสอุปกรณ์
+     */
     @PutMapping("/handytools/{id}/return")
     Storage returnTool(@PathVariable Long id) {
         return repository.findById(id)
@@ -118,6 +151,9 @@ public class HandytoolsController {
             });
     }
 
+    /**
+     * ดึงรายการอุปกรณ์ที่สามารถยืมได้
+     */
     @GetMapping("/handytools/available")
     List<Storage> findAvailableTools() {
         return repository.findAll().stream()
@@ -125,6 +161,9 @@ public class HandytoolsController {
             .toList();
     }
 
+    /**
+     * ดึงรายการอุปกรณ์ที่ถูกยืมไปแล้ว
+     */
     @GetMapping("/handytools/borrowed")
     List<Storage> findBorrowedTools() {
         return repository.findAll().stream()
