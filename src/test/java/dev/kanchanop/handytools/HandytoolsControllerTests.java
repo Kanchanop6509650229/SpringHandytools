@@ -165,14 +165,16 @@ class HandytoolsControllerTests {
 
         // Try to borrow it again
         String newBorrower = "New Borrower";
-        ResponseEntity<Storage> borrowResponse = restTemplate.exchange(
+        ResponseEntity<String> borrowResponse = restTemplate.exchange(
             "/handytools/" + toolId + "/borrow",
             HttpMethod.PUT,
             new HttpEntity<>(newBorrower),
-            Storage.class
+            String.class
         );
 
-        assertThat(borrowResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        // Should return 409 CONFLICT with appropriate error message
+        assertThat(borrowResponse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(borrowResponse.getBody()).contains("Conflict");
     }
 
     @Test
@@ -191,5 +193,46 @@ class HandytoolsControllerTests {
         Storage[] tools = response.getBody();
         assertThat(tools).isNotNull();
         assertThat(tools).allMatch(Storage::isBorrowed);
+    }
+
+    @Test
+    void shouldFindToolsBorrowedByUser() {
+        // Create a tool that's borrowed by "TestUser"
+        Storage borrowedTool = new Storage("Test Tool", "Owner", "Location", true, "TestUser");
+        ResponseEntity<Storage> createResponse = restTemplate.postForEntity("/handytools", borrowedTool, Storage.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        
+        // Create another tool that's borrowed by someone else
+        Storage otherTool = new Storage("Other Tool", "Owner", "Location", true, "OtherUser");
+        restTemplate.postForEntity("/handytools", otherTool, Storage.class);
+        
+        // Test finding tools borrowed by TestUser
+        ResponseEntity<Storage[]> response = restTemplate.getForEntity("/handytools/borrowed-by/TestUser", Storage[].class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Storage[] tools = response.getBody();
+        assertThat(tools).isNotNull();
+        assertThat(tools).hasSize(1);
+        assertThat(tools[0].getBorrowerName()).isEqualTo("TestUser");
+    }
+
+    @Test
+    void shouldHandleConflictWhenReturningNonBorrowedTool() {
+        // Create a non-borrowed tool
+        Storage tool = new Storage("Test Tool", "Owner", "Location", false, "");
+        ResponseEntity<Storage> createResponse = restTemplate.postForEntity("/handytools", tool, Storage.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Storage createdTool = createResponse.getBody();
+        assertThat(createdTool).isNotNull();
+        Long toolId = createdTool.getId();
+
+        // Try to return it
+        ResponseEntity<String> response = restTemplate.exchange(
+            "/handytools/" + toolId + "/return",
+            HttpMethod.PUT,
+            HttpEntity.EMPTY,
+            String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
 }

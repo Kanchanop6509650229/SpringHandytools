@@ -135,8 +135,8 @@ public class Storage {
         if (borrowerName == null || borrowerName.trim().isEmpty()) {
             throw new IllegalArgumentException("Borrower name must not be empty");
         }
-        if (!canBeBorrowed()) {
-            throw new IllegalStateException("Tool is already borrowed by " + this.borrowerName);
+        if (this.borrowed) {
+            throw new StorageAlreadyBorrowedException(this.borrowerName);
         }
         this.borrowed = true;
         this.borrowerName = borrowerName.trim();
@@ -147,10 +147,19 @@ public class Storage {
      * @throws IllegalStateException ถ้าอุปกรณ์ยังไม่ถูกยืม
      */
     public void returnTool() {
-        if (!canBeReturned()) {
-            throw new IllegalStateException("Tool is not currently borrowed");
+        if (!this.borrowed) {
+            throw new IllegalStateException("Cannot return a tool that has not been borrowed");
         }
         this.borrowed = false;
         this.borrowerName = "";
+    }
+
+    /**
+     * ตรวจสอบว่าผู้ใช้รายนี้เป็นผู้ที่ยืมอุปกรณ์นี้อยู่หรือไม่
+     * @param borrowerName ชื่อผู้ยืมที่ต้องการตรวจสอบ
+     * @return true ถ้าเป็นผู้ยืมปัจจุบัน, false ถ้าไม่ใช่
+     */
+    public boolean isBorrowedBy(String borrowerName) {
+        return this.borrowed && this.borrowerName.equals(borrowerName);
     }
 }

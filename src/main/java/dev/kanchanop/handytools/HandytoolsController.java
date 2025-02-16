@@ -115,15 +115,15 @@ public class HandytoolsController {
                     Storage saved = repository.save(storage);
                     log.info("Tool {} borrowed by {}", saved.getToolDetail(), saved.getBorrowerName());
                     return saved;
-                } catch (IllegalStateException | IllegalArgumentException e) {
-                    log.warn("Failed to borrow tool {}: {}", id, e.getMessage());
+                } catch (StorageAlreadyBorrowedException e) {
+                    log.warn("Tool {} is already borrowed: {}", id, e.getMessage());
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Tool is currently borrowed");
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid borrower name for tool {}: {}", id, e.getMessage());
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
                 }
             })
-            .orElseThrow(() -> {
-                log.warn("Tool {} not found for borrowing", id);
-                return new StorageNotFoundException(id);
-            });
+            .orElseThrow(() -> new StorageNotFoundException(id));
     }
 
     /**
@@ -141,14 +141,11 @@ public class HandytoolsController {
                     log.info("Tool {} returned by {}", saved.getToolDetail(), previousBorrower);
                     return saved;
                 } catch (IllegalStateException e) {
-                    log.warn("Failed to return tool {}: {}", id, e.getMessage());
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+                    log.warn("Cannot return tool {}: {}", id, e.getMessage());
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
                 }
             })
-            .orElseThrow(() -> {
-                log.warn("Tool {} not found for returning", id);
-                return new StorageNotFoundException(id);
-            });
+            .orElseThrow(() -> new StorageNotFoundException(id));
     }
 
     /**
@@ -168,6 +165,16 @@ public class HandytoolsController {
     List<Storage> findBorrowedTools() {
         return repository.findAll().stream()
             .filter(s -> !s.canBeBorrowed())
+            .toList();
+    }
+
+    /**
+     * ค้นหาอุปกรณ์ที่ถูกยืมโดยผู้ยืมที่ระบุ
+     */
+    @GetMapping("/handytools/borrowed-by/{borrowerName}")
+    List<Storage> findToolsBorrowedBy(@PathVariable String borrowerName) {
+        return repository.findAll().stream()
+            .filter(s -> s.isBorrowedBy(borrowerName))
             .toList();
     }
 }
