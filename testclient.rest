@@ -38,13 +38,13 @@ Content-Type: application/json
 }
 
 ### Borrow a tool successfully
-PUT http://localhost:8080/handytools/1/borrow
+PUT http://localhost:8080/handytools/3/borrow
 Content-Type: text/plain
 
 Alice
 
 ### Return a tool successfully
-PUT http://localhost:8080/handytools/1/return
+PUT http://localhost:8080/handytools/3/return
 
 ### Delete tool
 DELETE http://localhost:8080/handytools/1
